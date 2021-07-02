@@ -360,7 +360,7 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         collection = fiona.open(self.file_name)
-        
+
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
         num_features = len(collection)
@@ -391,11 +391,12 @@ class GeoJSONSource(filebasedsource.FileBasedSource):
 
             next_pos = next_pos + feature_bytes
 
-    def __init__(self, file_pattern, skip_reproject=False,
+    def __init__(self, file_pattern, skip_reproject=False,file_name=None,
                  in_epsg=None, **kwargs):
 
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.file_name=file_name
 
         super(GeoJSONSource, self).__init__(file_pattern)
 
@@ -435,13 +436,13 @@ class ESRIServerSource(filebasedsource.FileBasedSource):
         range_tracker.set_split_points_unclaimed_callback(split_points_unclaimed)
 
         esri_dump = EsriDumper(self.file_name)
-        
+
         geojson = {
         "type": "FeatureCollection",
         "features": list(d) }
 
         collection = BytesCollection(json.dumps(geojson, indent=2).encode('utf-8'))
-        
+
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
         num_features = len(collection)

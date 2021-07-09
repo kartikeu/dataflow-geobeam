@@ -290,7 +290,8 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             i = 0
 
             # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
-            features = list(collection)
+            # features = list(collection)
+            collection = iter(collection)
 
             logging.info(json.dumps({
                 'msg': 'read_records',
@@ -305,7 +306,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 if i >= num_features:
                     break
 
-                cur_feature = features[i]
+                cur_feature = next(collection)
                 geom = cur_feature['geometry']
                 props = cur_feature['properties']
 

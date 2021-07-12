@@ -300,10 +300,10 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 'num_features': num_features,
                 'total_bytes': total_bytes
             }))
-
+            id = 1
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / feature_bytes)
-                if i >= num_features:
+                if id == num_features:
                     break
 
                 cur_feature = next(collection_iter)
@@ -316,6 +316,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 yield (props, geom)
 
                 next_pos = next_pos + feature_bytes
+                id = int(cur_feature['id'])
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
             in_epsg=None, skip_reproject=False, **kwargs):

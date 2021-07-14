@@ -19,6 +19,8 @@ files.
 
 import math
 import logging
+from threading import Lock
+lock = Lock()
 
 from apache_beam.io import iobase
 from apache_beam.io import filebasedsource
@@ -300,23 +302,22 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 'num_features': num_features,
                 'total_bytes': total_bytes
             }))
-            id = 1
+            
             while range_tracker.try_claim(next_pos):
                 i = math.ceil(next_pos / feature_bytes)
-                if id == num_features:
+                if i >= num_features:
                     break
+                with lock:
+                    cur_feature = next(collection_iter)
+                    geom = cur_feature['geometry']
+                    props = cur_feature['properties']
 
-                cur_feature = next(collection_iter)
-                geom = cur_feature['geometry']
-                props = cur_feature['properties']
+                    if not self.skip_reproject:
+                        geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
 
-                if not self.skip_reproject:
-                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
-
-                yield (props, geom)
+                    yield (props, geom)
 
                 next_pos = next_pos + feature_bytes
-                id = int(cur_feature['id'])
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
             in_epsg=None, skip_reproject=False, **kwargs):

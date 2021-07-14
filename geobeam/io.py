@@ -19,7 +19,7 @@ files.
 
 import math
 import logging
-from threading import Lock
+from multiprocessing import Lock
 lock = Lock()
 
 from apache_beam.io import iobase

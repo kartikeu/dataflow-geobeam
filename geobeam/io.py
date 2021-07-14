@@ -19,8 +19,6 @@ files.
 
 import math
 import logging
-from multiprocessing import Lock
-lock = Lock()
 
 from apache_beam.io import iobase
 from apache_beam.io import filebasedsource
@@ -275,7 +273,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
     def read_records(self, file_name, range_tracker):
         from fiona import transform
         from fiona.io import ZipMemoryFile
-        import json
+        import json,fiona
 
         total_bytes = self.estimate_size()
         next_pos = range_tracker.start_position()
@@ -283,8 +281,8 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
-        with self.open_file(file_name) as f, ZipMemoryFile(f.read()) as mem:
-            collection = mem.open(self.gdb_name, layer=self.layer_name)
+        with self.open_file(file_name) as f:
+            collection = fiona.open(self.gdb_name, layer=self.layer_name)
             is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
             num_features = len(collection)
@@ -292,8 +290,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             i = 0
 
             # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
-            # features = list(collection)
-            collection_iter = iter(collection)
+            features = list(collection)
 
             logging.info(json.dumps({
                 'msg': 'read_records',
@@ -307,15 +304,15 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
                 i = math.ceil(next_pos / feature_bytes)
                 if i >= num_features:
                     break
-                with lock:
-                    cur_feature = next(collection_iter)
-                    geom = cur_feature['geometry']
-                    props = cur_feature['properties']
+                    
+                cur_feature = features[i]
+                geom = cur_feature['geometry']
+                props = cur_feature['properties']
 
-                    if not self.skip_reproject:
-                        geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+                if not self.skip_reproject:
+                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
 
-                    yield (props, geom)
+                yield (props, geom)
 
                 next_pos = next_pos + feature_bytes
 

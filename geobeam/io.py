@@ -281,40 +281,40 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
         def split_points_unclaimed(stop_pos):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
-        with self.open_file(file_name) as f:
-            collection = fiona.open(self.gdb_name, layer=self.layer_name)
-            is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
+#         with self.open_file(file_name) as f:
+        collection = fiona.open(self.gdb_name, layer=self.layer_name)
+        is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
-            num_features = len(collection)
-            feature_bytes = math.floor(total_bytes / num_features)
-            i = 0
+        num_features = len(collection)
+        feature_bytes = math.floor(total_bytes / num_features)
+        i = 0
 
-            # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
-            features = list(collection)
+        # XXX workaround due to https://github.com/Toblerity/Fiona/issues/996
+        features = list(collection)
 
-            logging.info(json.dumps({
-                'msg': 'read_records',
-                'file_name': file_name,
-                'profile': collection.profile,
-                'num_features': num_features,
-                'total_bytes': total_bytes
-            }))
-            
-            while range_tracker.try_claim(next_pos):
-                i = math.ceil(next_pos / feature_bytes)
-                if i >= num_features:
-                    break
-                    
-                cur_feature = features[i]
-                geom = cur_feature['geometry']
-                props = cur_feature['properties']
+        logging.info(json.dumps({
+            'msg': 'read_records',
+            'file_name': file_name,
+            'profile': collection.profile,
+            'num_features': num_features,
+            'total_bytes': total_bytes
+        }))
 
-                if not self.skip_reproject:
-                    geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+        while range_tracker.try_claim(next_pos):
+            i = math.ceil(next_pos / feature_bytes)
+            if i >= num_features:
+                break
 
-                yield (props, geom)
+            cur_feature = features[i]
+            geom = cur_feature['geometry']
+            props = cur_feature['properties']
 
-                next_pos = next_pos + feature_bytes
+            if not self.skip_reproject:
+                geom = transform.transform_geom(src_crs, 'epsg:4326', geom)
+
+            yield (props, geom)
+
+            next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
             in_epsg=None, skip_reproject=False, **kwargs):

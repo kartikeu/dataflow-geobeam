@@ -282,7 +282,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             return 0 if stop_pos <= next_pos else iobase.RangeTracker.SPLIT_POINTS_UNKNOWN
 
 #         with self.open_file(file_name) as f:
-        collection = fiona.open(self.gdb_name, layer=self.layer_name)
+        collection = fiona.open(self.gdb_name, layer=self.layer_name, driver=self.driver_name)
         is_wgs84, src_crs = _GeoSourceUtils.validate_crs(collection.crs, self.in_epsg)
 
         num_features = len(collection)
@@ -317,12 +317,13 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
-            in_epsg=None, skip_reproject=False, **kwargs):
+            in_epsg=None, skip_reproject=False, driver_name=None, **kwargs):
 
         self.gdb_name = gdb_name
         self.layer_name = layer_name
         self.skip_reproject = skip_reproject
         self.in_epsg = in_epsg
+        self.driver_name = driver_name
 
         super(GeodatabaseSource, self).__init__(file_pattern)
 

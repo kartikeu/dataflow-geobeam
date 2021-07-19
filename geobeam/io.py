@@ -317,7 +317,7 @@ class GeodatabaseSource(filebasedsource.FileBasedSource):
             next_pos = next_pos + feature_bytes
 
     def __init__(self, file_pattern, gdb_name=None, layer_name=None,
-            in_epsg=None, skip_reproject=False, driver_name=None, **kwargs):
+            in_epsg=None, skip_reproject=False, **kwargs):
 
         self.gdb_name = gdb_name
         self.layer_name = layer_name
